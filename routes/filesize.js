@@ -1,5 +1,6 @@
 var express = require( 'express' );
 var router = express.Router();
+var renderParams = require( '../models/text' ).filesize;
 
 var path = process.cwd();
 var multer = require( 'multer' );
@@ -11,7 +12,7 @@ var upload = multer( {
 // middleware that is specific to this router
 // define the home page route
 
-router.use(autoReap);
+router.use( autoReap );
 router.post( '/get-file-size', upload.single( 'sizeFile' ), function( req, res, next ) {
   if ( !req.file ) {
     next( new Error( 'Please select a file.' ) );
@@ -22,18 +23,9 @@ router.post( '/get-file-size', upload.single( 'sizeFile' ), function( req, res, 
 
 } )
 
-var stories = [
-  'I can submit a FormData object that includes a file upload.',
-  'When I submit something, I will receive the file size in bytes within the JSON response'
-];
-
 
 router.use( function( req, res ) {
-  res.render( 'filesize', {
-    title: 'File Metadata Microservice',
-    userStories: stories,
-    examples: []
-  } )
+  res.render( 'filesize', renderParams )
 } )
 
 

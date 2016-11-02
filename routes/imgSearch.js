@@ -8,6 +8,8 @@ const https = require( 'https' ),
   bl = require( 'bl' );
 var path = process.cwd();
 
+var renderParams = require( '../models/text' ).imgSearch;
+
 var router = express.Router();
 
 const db = monk( mongoURI );
@@ -30,39 +32,15 @@ router.get( '/search/:term', validateQuery, search, saveDB );
 
 router.get( '/latest', getDB );
 
-// router.get( '/', function( req, res, next ) {
-//   res.sendFile( path + '/public/imgsearch.html' );
-// } );
-
-
-var stories = [
-  'I can get the image URLs, alt text and page urls for a set of images relating to a given search string.',
-  'I can paginate through the responses by adding a ?offset=2 parameter to the URL.',
-  'I can get a list of the most recently submitted search strings.',
-  'Clarification: Results are in groups of 10, with the offset corresponding to page number.'
-];
-var examples = [ {
-  'heading': 'Example usage:',
-  'content': [
-    'https://sebusch-img-sal.herokuapp.com/imagesearch/lolcats%20funny?offset=10',
-    'https://sebusch-img-sal.herokuapp.com/latest'
-  ]
-} ]
-
 router.get( '/', function( req, res ) {
-  res.render( 'task', {
-    title: 'Image Search Abstraction Layer',
-    userStories: stories,
-    examples: examples
-  } )
+  res.render( 'task', renderParams );
 } )
 
-
-//The 404 Route (ALWAYS Keep this as the last route)
-router.use( function( req, res ) {
-  res.status( 404 ).json( {
-    error: '404 File not found'
-  } );
+// catch 404 and forward to error handler
+router.use( function( req, res, next ) {
+  var err = new Error( 'Not Found' );
+  err.status = 404;
+  next( err );
 } );
 
 module.exports = router;

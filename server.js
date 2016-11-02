@@ -8,6 +8,7 @@ var headerParser = require( './routes/headerParser' );
 var filesize = require( './routes/filesize' );
 var shortUrl = require( './routes/shortUrl' );
 var imgSearch = require( './routes/imgSearch' );
+var text = require( './models/text' );
 
 var app = express();
 var PORT = process.env.PORT || 8080;
@@ -16,49 +17,19 @@ app.set( 'view engine', 'pug' );
 app.use( favicon( './favicon.ico' ) );
 app.use( express.static( __dirname + '/public' ) );
 
-var pages = [ {
-  'title': 'Timestamp Microservice',
-  'link': '/timestamp'
-}, {
-  'title': 'Request Header Parser Microservice',
-  'link': '/headerparser'
-}, {
-  'title': 'URL Shortener Microservice',
-  'link': '/shorturl'
-}, {
-  'title': 'Image Search Abstraction Layer',
-  'link': '/imgsearch'
-}, {
-  'title': 'File Metadata Microservice',
-  'link': '/filesize'
-}, ]
-
 app.get( '/', function( req, res ) {
   res.render( 'index', {
     title: 'Backend Projects',
-    pages: pages
+    pages: text
   } )
 } )
 
-app.use( '/timestamp', timestamp );
-app.use( '/headerparser', headerParser );
-app.use( '/filesize', filesize );
-app.use( '/shorturl', shortUrl );
-app.use( '/imgsearch', imgSearch );
+app.use( text.timestamp.link, timestamp );
+app.use( text.headerParser.link, headerParser );
+app.use( text.filesize.link, filesize );
+app.use( text.shortUrl.link, shortUrl );
+app.use( text.imgSearch.link, imgSearch );
 
-
-// app.use( function( req, res, next ) {
-//   res.status( 404 ).send( {
-//     error: 'Page does not exist'
-//   } );
-// } );
-
-// app.use( function( err, req, res, next ) {
-//   res.send( {
-//     error: err.message
-//   } );
-//   next( err );
-// } );
 
 // catch 404 and forward to error handler
 app.use( function( req, res, next ) {

@@ -3,6 +3,8 @@ var router = express.Router();
 var path = process.cwd();
 
 
+var renderParams = require( '../models/text' ).shortUrl;
+
 var monk = require( 'monk' );
 var mongoURI = process.env.MONGOLAB_URI;
 const db = monk( mongoURI );
@@ -20,41 +22,11 @@ var collection = db.get( 'urls' )
 
 
 router.get( '/new/*', validateUrl, queryDB );
-
-
 router.get( '/:shortcut', redirectDB );
 
-// router.get( '/', function( req, res, next ) {
-//   res.sendFile( path + '/public/shorturl.html' );
-// } );
-
-var stories = [
-  'I can pass a URL as a parameter and I will receive a shortened URL in the JSON response.',
-  'If I pass an invalid URL that doesn\'t follow the valid http://www.example.com format, the JSON response will contain an error instead.',
-  'When I visit that shortened URL, it will redirect me to my original link.'
-];
-var examples = [ {
-  'heading': 'Example usage:',
-  'content': [
-    'https://sebusch-url.herokuapp.com/new/https://www.google.com'
-  ]
-}, {
-  'heading': 'Example output:',
-  'content': [ '{ "original_url": "http://www.google.com", "short_url": "https://sebusch-url.herokuapp.com/gkLni5" }' ]
-}, {
-  'heading': 'Usage:',
-  'content': [ 'https://sebusch-url.herokuapp.com/gkLni5' ]
-}, {
-  'heading': 'Will redirect to:',
-  'content': [ 'http://www.google.com' ]
-} ]
 
 router.get( '/', function( req, res ) {
-  res.render( 'task', {
-    title: 'URL Shortener Microservice',
-    userStories: stories,
-    examples: examples
-  } )
+  res.render( 'task', renderParams )
 } )
 
 
