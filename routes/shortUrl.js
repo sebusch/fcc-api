@@ -1,26 +1,11 @@
 var express = require( 'express' );
 var router = express.Router();
-var path = process.cwd();
-
+var Url = require( '../models/urls' );
 
 var renderParams = require( '../models/text' ).shortUrl;
+var timeout = require( 'connect-timeout' );
 
-var monk = require( 'monk' );
-var mongoURI = process.env.MONGOLAB_URI;
-const db = monk( mongoURI );
-
-db.catch( ( err ) => {
-  // error connecting to the database
-  router.use( function( err, req, res, next ) {
-    console.error( err.stack );
-    res.status( 500 ).send( 'Sorry there is an error connecting to the database' );
-  } );
-} );
-
-
-var collection = db.get( 'urls' )
-
-
+router.use( timeout( '5s' ) );
 router.get( '/new/*', validateUrl, queryDB );
 router.get( '/:shortcut', redirectDB );
 
@@ -29,69 +14,43 @@ router.get( '/', function( req, res ) {
   res.render( 'task', renderParams )
 } )
 
+router.use( function( err, req, res, next ) {
+  if ( err.timeout ) {
+    err.message = 'Sorry there is an error connecting to the database';
+  }
+  next( err );
+} )
 
 module.exports = router;
 
 function redirectDB( req, res, next ) {
-
-  collection
-    .findOne( {
-      short_url: req.params.shortcut
-    } )
-    .then( ( doc ) => {
-      if ( doc ) {
-        res.redirect( doc.original_url );
-      } else {
-        res.send( 'sorry, ' + req.params.shortcut + ' is not a valid bookmark.' );
-      }
-    } )
-    .catch( ( err ) => {
-      res.send( 'there was a server-side error with the database' );
-    } );
+  Url.findShort( req.params.shortcut, function( err, doc ) {
+    if ( err ) {
+      next( err );
+    }
+    if ( doc ) {
+      res.redirect( doc.original_url );
+    } else {
+      res.send( 'sorry, ' + req.params.shortcut + ' is not a valid bookmark.' );
+    }
+  } );
 }
 
+
+function queryDB( req, res, next ) {
+  Url.findAndUpdate( req.params[ 0 ], function( err, doc ) {
+    if ( err ) {
+      next( err )
+    }
+    res.send( doc );
+  } )
+}
 
 function validateUrl( req, res, next ) {
   if ( re_weburl.test( req.params[ 0 ] ) ) {
     next();
   } else {
     next( new Error( 'That is not a valid url. Remember to include http:// or https://' ) );
-  }
-}
-
-function queryDB( req, res, next ) {
-  collection.findOneAndUpdate(
-    {
-      original_url: req.params[ 0 ]
-    },
-    {
-      $setOnInsert: {
-        original_url: req.params[ 0 ],
-        short_url: getID()
-      }
-    },
-    {
-      projection: {
-        _id: 0
-      },
-      new: true, // return new doc if one is upserted
-      upsert: true // insert the document if it does not exist
-    }
-  ).then( ( doc ) => {
-    res.send( doc );
-  } ).catch( ( err ) => {
-    // An error happened while inserting
-    next( new Error( 'error while inserting into db' ) );
-  } );
-}
-
-
-
-function processInput( input ) {
-  if ( re_weburl.test( input ) ) {
-    return input + ' is a valid url';
-  } else {
-    return 'That is not a valid url. Remember to include http:// or https://';
   }
 }
 
@@ -133,38 +92,3 @@ var re_weburl = new RegExp(
   '(?:[/?#]\\S*)?' +
   '$', 'i'
 );
-
-var BASE10 = '0123456789';
-var BASE62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-var BASE56 = '23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
-function convert( src, srctable, desttable ) {
-  var srclen = srctable.length;
-  var destlen = desttable.length;
-  var val = 0;
-  var numlen = src.length;
-  for ( var i = 0; i < numlen; i++ ) {
-    val = val * srclen + srctable.indexOf( src.charAt( i ) );
-  }
-  if ( val < 0 ) {
-    return 0;
-  }
-  var r = val % destlen;
-  var res = desttable.charAt( r );
-  var q = Math.floor( val / destlen );
-  while ( q ) {
-    r = q % destlen;
-    q = Math.floor( q / destlen );
-    res = desttable.charAt( r ) + res;
-  }
-  return res;
-}
-
-function getID() {
-  var time = new Date();
-  var offset = time.getTime() - 1470000000000;
-  if ( offset < 0 ) {
-    offset = -offset;
-  }
-  var result = convert( offset.toString(), BASE10, BASE56 );
-  return result;
-}

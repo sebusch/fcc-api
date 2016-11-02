@@ -1,37 +1,22 @@
 var express = require( 'express' );
-var monk = require( 'monk' );
-var mongoURI = process.env.MONGOLAB_URI;
+var Img = require( '../models/imgs' );
 var apiKey = process.env.GOOG_API_KEY;
 var cseID = '009023594552369937811:myxjg6juwm0';
 const https = require( 'https' ),
   qs = require( 'querystring' ),
   bl = require( 'bl' );
-var path = process.cwd();
 
 var renderParams = require( '../models/text' ).imgSearch;
 
 var router = express.Router();
+var timeout = require( 'connect-timeout' );
 
-const db = monk( mongoURI );
-
-db.catch( ( err ) => {
-  // error connecting to the database
-  router.use( function( err, req, res, next ) {
-    console.error( err.stack );
-    res.status( 500 ).send( 'Sorry there is an error connecting to the database' );
-  } );
-} );
-
-const collection = db.get( 'imgs' )
-
+router.use( timeout( '5s' ) );
 router.get( '/search', function( req, res ) {
   res.redirect( '/' );
 } );
-
 router.get( '/search/:term', validateQuery, search, saveDB );
-
 router.get( '/latest', getDB );
-
 router.get( '/', function( req, res ) {
   res.render( 'task', renderParams );
 } )
@@ -42,6 +27,12 @@ router.use( function( req, res, next ) {
   err.status = 404;
   next( err );
 } );
+router.use( function( err, req, res, next ) {
+  if ( err.timeout ) {
+    err.message = 'Sorry there is an error connecting to the database';
+  }
+  next( err );
+} )
 
 module.exports = router;
 
@@ -84,7 +75,7 @@ function search( req, res, next ) {
 
     response.pipe( bl( function( err, data ) {
       if ( err ) {
-        console.error( err.message );
+        //console.error( err.message );
         next( err );
       }
       var dataString = data.toString();
@@ -104,26 +95,24 @@ function search( req, res, next ) {
       next();
     } ) );
   } ).on( 'error', function( err ) {
-    console.error( err );
+    //console.error( err );
     next( err );
   } );
 }
 
 function saveDB( req, res, next ) {
-  collection.insert( {
-    term: req.params.term
-  } ).catch( ( err ) => {
-    // An error happened while inserting
-    next( new Error( 'error inserting into database' ) );
+  Img.save( req.params.term, function( err ) {
+    if ( err ) {
+      next( new Error( 'error inserting into database' ) );
+    }
   } )
 }
 
 function getDB( req, res, next ) {
-  collection.find( {}, {
-    sort: {
-      $natural: -1
+  Img.findAll( function( err, docs ) {
+    if ( err ) {
+      next( err );
     }
-  } ).then( ( docs ) => {
     var output = [];
     for ( var i = 0; i < docs.length; i++ ) {
       output.push( {
@@ -132,8 +121,5 @@ function getDB( req, res, next ) {
       } );
     }
     res.send( output );
-  } ).catch( ( err ) => {
-    console.log( err );
-    next( err );
-  } );
+  } )
 }

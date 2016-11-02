@@ -1,74 +1,93 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
 
 require( 'dotenv' ).config();
 
-var express = require( 'express' );
-var favicon = require( 'serve-favicon' );
-var timestamp = require( './routes/timestamp' );
-var headerParser = require( './routes/headerParser' );
-var filesize = require( './routes/filesize' );
-var shortUrl = require( './routes/shortUrl' );
-var imgSearch = require( './routes/imgSearch' );
-var text = require( './models/text' );
+var app = require( './app' );
+var http = require( 'http' );
 
-var app = express();
-var PORT = process.env.PORT || 8080;
+/**
+ * Get port from environment and store in Express.
+ */
 
-app.set( 'view engine', 'pug' );
-app.use( favicon( './favicon.ico' ) );
-app.use( express.static( __dirname + '/public' ) );
+var port = normalizePort( process.env.PORT || '3000' );
+app.set( 'port', port );
 
-app.get( '/', function( req, res ) {
-  res.render( 'index', {
-    title: 'Backend Projects',
-    pages: text
-  } )
-} )
+/**
+ * Create HTTP server.
+ */
 
-app.use( text.timestamp.link, timestamp );
-app.use( text.headerParser.link, headerParser );
-app.use( text.filesize.link, filesize );
-app.use( text.shortUrl.link, shortUrl );
-app.use( text.imgSearch.link, imgSearch );
+var server = http.createServer( app );
 
+/**
+ * Listen on provided port, on all network interfaces.
+ */
 
-// catch 404 and forward to error handler
-app.use( function( req, res, next ) {
-  var err = new Error( 'Not Found' );
-  err.status = 404;
-  next( err );
-} );
+server.listen( port );
+server.on( 'error', onError );
+server.on( 'listening', onListening );
 
-// error handlers
+/**
+ * Normalize a port into a number, string, or false.
+ */
 
-// development error handler
-// will print stacktrace
-if ( app.get( 'env' ) === 'development' ) {
-  app.use( function( err, req, res, next ) {
-    res.status( err.status || 500 );
-    res.render( 'error', {
-      title: 'Error',
-      message: err.message,
-      error: err
-    } );
-  } );
+function normalizePort( val ) {
+  var port = parseInt( val, 10 );
+
+  if ( isNaN( port ) ) {
+    // named pipe
+    return val;
+  }
+
+  if ( port >= 0 ) {
+    // port number
+    return port;
+  }
+
+  return false;
 }
 
-// production error handler
-// no stacktraces leaked to user
-app.use( function( err, req, res, next ) {
-  res.status( err.status || 500 );
-  res.render( 'error', {
-    title: 'Error',
-    message: err.status + ' ' + err.message,
-    error: {}
-  } );
-} );
+/**
+ * Event listener for HTTP server "error" event.
+ */
 
+function onError( error ) {
+  if ( error.syscall !== 'listen' ) {
+    throw error;
+  }
 
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
 
+  // handle specific listen errors with friendly messages
+  switch ( error.code ) {
+  case 'EACCES':
+    console.error( bind + ' requires elevated privileges' );
+    process.exit( 1 );
+    break;
+  case 'EADDRINUSE':
+    console.error( bind + ' is already in use' );
+    process.exit( 1 );
+    break;
+  default:
+    throw error;
+  }
+}
 
+/**
+ * Event listener for HTTP server "listening" event.
+ */
 
-app.listen( PORT, function() {
-  console.log( 'Example app listening on port %d!', PORT );
-} );
-
+// var debug = require( 'debug' )( 'enter_appname_here:server' );
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  console.log( 'Listening on ' + bind );
+//  debug( 'Listening on ' + bind );
+}
