@@ -1,0 +1,11 @@
+//- layout: title, block body
+//- task: string array userStories
+//- can fill in block examples, block content
+extends task
+
+block content
+  h3 Upload File here:
+  form( method="post", action="/filesize/get-file-size", enctype='multipart/form-data')
+    .form-group
+      input(type="file", name="sizeFile", id="exampleInputFile")
+    button(type="submit", class="btn btn-default") Submit

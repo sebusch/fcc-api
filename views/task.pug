@@ -1,0 +1,23 @@
+//- layout: title, block body
+//- string array userStories
+//- array examples= [ {heading: "heading title", content: ["part 1","part2"]},]
+//- can fill in block examples, block content
+extends layout
+
+block body
+  h1= title
+    small &nbsp;for freecodecamp
+  .bs-callout.bs-callout-info
+    h4 User Stories
+    ol
+      each story in userStories
+        li= story
+      else
+        li there are no user stories
+  if(examples.length != 0)
+    each example in examples
+      h3= example.heading
+      each line in example.content
+        code= line
+          br
+  block content
