@@ -14,14 +14,15 @@ router.get( '/:input', function( req, res ) {
   res.send( processInput( req.params.input ) );
 } );
 
+// challenge is given for seconds but javascript processes milliseconds
 function processInput( input ) {
-  var date = ( +input ) ? new Date( +input ) : new Date( input );
+  var date = ( +input*1000 ) ? new Date( +input*1000 ) : new Date( input );
   var output = {
     unix: null,
     natural: null
   };
   if ( date.getDate() ) {
-    output.unix = date.getTime();
+    output.unix = date.getTime()/1000;
     output.natural = dateParser( date );
   }
   return output;

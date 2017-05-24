@@ -1,5 +1,6 @@
 var text = {};
-var baseUrl = 'http://seb.herokuapp.com';
+//var baseUrl = 'http://seb.herokuapp.com';
+var baseUrl = 'https://seb-api.glitch.me';
 
 text.timestamp = {
   title: 'Timestamp Microservice',
